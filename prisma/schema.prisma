@@ -12,10 +12,36 @@ datasource db {
   provider = "postgresql"
 }
 
-model user {
+model User {
   id           String   @id @default(uuid())
   email        String   @unique
   passwordHash String
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+
+  roleId Int
+  role   Role @relation(fields: [roleId], references: [id])
+
+  session Session[]
+}
+
+model Role {
+  id   Int    @id @default(autoincrement())
+  name String @unique
+
+  users User[]
+}
+
+model Session {
+  id        String    @id @default(uuid())
+  userId    String
+  tokenHash  String    @unique
+  expiresAt DateTime
+  revokedAt DateTime?
+
+  user User @relation(fields: [userId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
 }
