@@ -1,10 +1,12 @@
 import express, { Request, Response } from 'express';
 import authRouter from './routes/auth.js';
 import staffRouter from './routes/staff.js';
+import cookieParser from "cookie-parser";
 
 const app = express();
 
 app.use(express.json());
+app.use(cookieParser());
 
 // authentication
 app.use('/auth', authRouter);

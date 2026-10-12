@@ -1,12 +1,7 @@
+import "dotenv/config";
 import express from "express";
 import { Request, Response } from "express";
-import { prisma } from "../lib/prisma.js";
-import {
-  registerUser,
-  loginUser,
-  findOwner,
-} from "../services/authServices.js";
-import { createHash, randomBytes } from "node:crypto";
+import { registerUser, loginUser, findOwner } from "../services/authServices.js";
 import { sessionCreate } from "../utils/session.js";
 
 // export const register = async (req: Request, res: Response) => {
@@ -26,6 +21,14 @@ export const login = async (req: Request, res: Response) => {
 
   const { sessionToken, expiresAt } = await sessionCreate(user.id);
 
+  res.cookie("session_token", sessionToken, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    expires: expiresAt,
+  });
+
   return res.status(200).json({
     success: true,
     message: "Login endpoint reached",
@@ -33,10 +36,8 @@ export const login = async (req: Request, res: Response) => {
       user: {
         id: user.id,
         email: user.email,
-        createdAt: user.createdAt,
-        updatedAt: user.updatedAt,
+        role: user.role,
       },
-      sessionToken,
       expiresAt: expiresAt,
     },
   });
