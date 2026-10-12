@@ -9,6 +9,13 @@ export const findUserByEmail = async (email: string) => {
     where: {
       email,
     },
+    include: {
+      role: {
+        select: {
+          name: true,
+        },
+      },
+    },
   });
 };
 
@@ -29,6 +36,7 @@ export const createUser = async (
       select: {
         id: true,
         email: true,
+        role: true,
         createdAt: true,
         updatedAt: true,
       },
@@ -81,7 +89,14 @@ export const registerUser = async (
 
   const hashedPassword = await hashPassword(password);
 
-  return createUser(normalizedEmail, hashedPassword, role);
+  const user = await createUser(normalizedEmail, hashedPassword, role);
+
+  return {
+    id: user?.id,
+    email: user?.email,
+    role: user?.role,
+    createdAt: user?.createdAt,
+  };
 };
 
 export const loginUser = async (email: string, password: string) => {
@@ -95,7 +110,7 @@ export const loginUser = async (email: string, password: string) => {
     throw new AppError(401, "Invalid email or password");
   }
 
-  const passwordMatches = verifyPassword(password, user.passwordHash);
+  const passwordMatches = await verifyPassword(password, user.passwordHash);
 
   if (!passwordMatches) {
     throw new AppError(401, "Invalid email or password");
@@ -104,6 +119,7 @@ export const loginUser = async (email: string, password: string) => {
   return {
     id: user.id,
     email: user.email,
+    role: user.role,
     createdAt: user.createdAt,
     updatedAt: user.updatedAt,
   };
@@ -117,6 +133,6 @@ export const findOwner = async () => {
     select: {
       id: true,
       email: true,
-    }
+    },
   });
 };

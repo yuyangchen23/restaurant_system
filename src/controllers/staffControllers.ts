@@ -1,28 +1,28 @@
 import { Request, Response } from "express";
 import { AppError } from "../errors/AppError.js";
-import { login } from "../services/staffServices.js";
-
+import { findUserByEmail, registerUser } from "../services/authServices.js";
 
 export const createStaff = async (req: Request, res: Response) => {
-  const { email, password } = req.body;
+  const { email, password, role } = req.body;
 
   if (!email || !password) {
     throw new AppError(400, "Email or password are required");
   }
 
-  const { user, sessionToken, expiresAt } = await login(email, password);
+  if (await findUserByEmail(email)) {
+    throw new AppError(400, "Email already exists");
+  }
 
-  res.cookie("session_token", sessionToken, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    path: "/",
-    expires: expiresAt,
-  })
+  if (!role) {
+    throw new AppError(400, "User's role is missing");
+  }
+
+  const user = await registerUser(email, password, role);
 
   return res.status(200).json({
     success: true,
-    message: "Login Success",
+    message: "Register success",
+    role: user.role?.name,
     user,
   });
 }

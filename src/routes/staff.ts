@@ -4,6 +4,6 @@ import { authenticate, authorize } from "../middleware/auth.js";
 
 const router = express.Router();
 
-// router.post('/staff', authenticate, authorize("Owner"), createStaff);
+router.post('/createStaff', authenticate, authorize("Owner"), createStaff);
 
 export default router;
