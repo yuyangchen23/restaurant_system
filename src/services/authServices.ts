@@ -74,6 +74,12 @@ export const registerUser = async (
     );
   }
 
+  const allowedRoles = ["Owner", "Manager", "Staff", "Kitchen"];
+
+  if (typeof role !== "string" || !allowedRoles.includes(role)) {
+    throw new AppError(400, "Invlaid role");
+  }
+
   const normalizedEmail = email.trim().toLowerCase();
 
   if (!isValidEmailFormat(normalizedEmail)) {
@@ -135,4 +141,28 @@ export const findOwner = async () => {
       email: true,
     },
   });
+};
+
+export const logoutUser = async (email: string, tokenHash: string) => {
+  const user = await findUserByEmail(email);
+
+  if (!user) {
+    throw new AppError(400, "No user found");
+  }
+
+  await prisma.session.update({
+    where: {
+      tokenHash,
+    },
+    data: {
+      revokedAt: new Date(Date.now()),
+    },
+  });
+
+  return {
+    id: user.id,
+    email: user.email,
+    role: user.role,
+    updatedAt: user.updatedAt,
+  };
 };

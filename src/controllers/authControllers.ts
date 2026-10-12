@@ -1,20 +1,9 @@
 import "dotenv/config";
-import express from "express";
 import { Request, Response } from "express";
-import { registerUser, loginUser, findOwner } from "../services/authServices.js";
+import { loginUser, findOwner, logoutUser } from "../services/authServices.js";
 import { sessionCreate } from "../utils/session.js";
-
-// export const register = async (req: Request, res: Response) => {
-//   const { email, password } = req.body;
-
-//   const newUser = await registerUser(email, password);
-
-//   return res.status(200).json({
-//     success: true,
-//     message: "Successfully registered a user",
-//     data: newUser
-//   });
-// };
+import { AppError } from "../errors/AppError.js";
+import { createHash } from "node:crypto";
 
 export const login = async (req: Request, res: Response) => {
   const user = await loginUser(req.body.email, req.body.password);
@@ -51,3 +40,38 @@ export const ownerCred = async (req: Request, res: Response) => {
     data: owner,
   });
 };
+
+export const logout = async (req: Request, res: Response) => {
+  const token = req.cookies?.session_token;
+
+  if (!token || typeof token !== "string") {
+    throw new AppError(401, "Authentication required")
+  }
+
+  const tokenHash = createHash("sha256").update(token).digest("hex");
+
+  const user = await logoutUser(req.body.email, tokenHash);
+
+  res.clearCookie("session_token", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+  });
+
+  res.status(200).json({
+    success: true,
+    message: "Logout successful",
+    data: {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      updatedAt: user.updatedAt,
+    },
+  });
+};
+
+// development
+// clearSession
+// deleteUser
+// 
