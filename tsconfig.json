@@ -42,4 +42,10 @@
     "skipLibCheck": true,
   },
   "include": ["src"],
+  "exclude": [
+    "**/__tests__/**/*",
+    "**/*.test.ts",
+    "**/*.spec.ts",
+    "tests/**/*",
+  ]
 }
