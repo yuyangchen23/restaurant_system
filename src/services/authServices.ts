@@ -64,13 +64,13 @@ export const registerUser = async (
 
   if (
     typeof password !== "string" ||
-    password.length < 8 ||
+    password.length < 3 ||
     password.length > 128 ||
     password.trim().length < 0
   ) {
     throw new AppError(
       400,
-      "Password must contian between 10 to 128 characters",
+      "Password must contian between 3 to 128 characters",
     );
   }
 

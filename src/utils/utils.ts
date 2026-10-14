@@ -12,5 +12,5 @@ export const isValidPasswordFormat = (password: unknown): password is string => 
   if (typeof password !== "string") {
     return false;
   }
-  return password.length >= 10;
+  return password.length >= 3;
 }
