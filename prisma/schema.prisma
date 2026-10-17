@@ -35,7 +35,7 @@ model Role {
 model Session {
   id        String    @id @default(uuid())
   userId    String
-  tokenHash  String    @unique
+  tokenHash String    @unique
   expiresAt DateTime
   revokedAt DateTime?
 
@@ -44,4 +44,12 @@ model Session {
   createdAt DateTime @default(now())
 
   @@index([userId])
+}
+
+model Table {
+  id        String   @id @default(uuid())
+  number    Int      @unique
+  capacity  Int
+  isActive  Boolean  @default(false)
+  createdAt DateTime @default(now())
 }
