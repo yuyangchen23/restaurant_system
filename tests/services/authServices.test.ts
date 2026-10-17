@@ -12,8 +12,6 @@ vi.mock("../../src/lib/prisma", () => ({
   },
 }));
 
-// vi.mock("")
-
 describe("User login checkpoint", () => {
 
   it("logs in with the valid account", async () => {
