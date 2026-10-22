@@ -52,4 +52,31 @@ model Table {
   capacity  Int
   isActive  Boolean  @default(false)
   createdAt DateTime @default(now())
+
+  reservations Reservation[]
+}
+
+enum ReservationStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+}
+
+model Reservation {
+  id           String @id @default(uuid())
+  tableId      String
+  customerName String
+  phone        String
+  partySize    Int
+
+  startTime DateTime
+  endTime   DateTime
+
+  status    ReservationStatus @default(CONFIRMED)
+  createdAt DateTime          @default(now())
+
+  table Table @relation(fields: [tableId], references: [id])
+
+  @@index([tableId, startTime])
 }
