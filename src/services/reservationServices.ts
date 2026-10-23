@@ -52,10 +52,11 @@ export const setUpReservation = async (input: ReservationInput) => {
 
     return reservation;
   } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError &&
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
       error.code === "P2002"
     ) {
       throw new AppError(401, "This reservation already exists.");
     }
   }
-}
+};
