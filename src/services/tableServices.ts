@@ -5,7 +5,7 @@ import { AppError } from "../errors/AppError.js";
 
 export const createATable = async (number: number, capacity: number) => {
   try {
-    const table = prisma.table.create({
+    const table = await prisma.table.create({
       data: {
         number: number,
         capacity: capacity,
@@ -22,13 +22,13 @@ export const createATable = async (number: number, capacity: number) => {
       error instanceof Prisma.PrismaClientKnownRequestError &&
       error.code === "P2002"
     ) {
-      throw new AppError(401, "A table with this number already exists");
+      throw new AppError(409, "A table with this number already exists");
     }
   }
 };
 
-export const getAllTables = () => {
-  return prisma.table.findMany({
+export const getAllTables = async () => {
+  return await prisma.table.findMany({
     select: {
       number: true,
       capacity: true,
@@ -54,9 +54,15 @@ export const getTable = async (id: string) => {
   });
 };
 
-export const updateTable = async (id: string, status: boolean) => {
-  if (!(await getTable(id))) {
-    throw new AppError(401, "Table does not exist.");
+export const updateTable = async (number: number, status: boolean) => {
+  const table = await prisma.table.findUnique({
+    where: {
+      number,
+    },
+  });
+
+  if (!table) {
+    throw new AppError(400, "Table does not exist.");
   }
 
   if (!status) {
@@ -65,7 +71,7 @@ export const updateTable = async (id: string, status: boolean) => {
 
   return await prisma.table.update({
     where: {
-      id,
+      number,
     },
     data: {
       isActive: status,

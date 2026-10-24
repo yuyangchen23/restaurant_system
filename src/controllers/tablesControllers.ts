@@ -46,15 +46,14 @@ export const getTableById = async (req: Request, res: Response) => {
   });
 };
 
-export const updateTableById = async (req: Request, res: Response) => {
-  const id = req.params.id;
-  const { status } = req.body;
+export const updateTableByNumber = async (req: Request, res: Response) => {
+  const { number, status } = req.body;
 
-  if (!id || typeof id !== "string") {
-    throw new AppError(401, "Invalid table id.");
+  if (!number || !status) {
+    throw new AppError(400, "Please provide table number and status");
   }
 
-  const table = await updateTable(id, status);
+  const table = await updateTable(number, status);
 
   res.status(200).json({
     success: true,

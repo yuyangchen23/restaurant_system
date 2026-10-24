@@ -4,10 +4,10 @@ import { prisma } from "../../src/lib/prisma";
 import { findFirstTable, setReservationTimer, setUpReservation } from "../../src/services/reservationServices";
 
 afterAll(async() => {
-  await prisma.$connect();
+  await prisma.$disconnect();
 });
 
-it("reproduce double-booking without lock", async () => {
+it("rejects double-booking for the same table", async () => {
   const table = await prisma.table.create({
     data: {
       number: 99999,
@@ -46,7 +46,15 @@ it("reproduce double-booking without lock", async () => {
       )
     );
 
-    expect(attempts.every((r) => r.status === "fulfilled"));
+    const successful = attempts.filter((r) => r.status === "fulfilled");
+    const failed = attempts.filter((r) => r.status === "rejected");
+
+    expect(successful).toHaveLength(1);
+    expect(failed).toHaveLength(1);
+
+    expect(failed[0]?.reason).toMatchObject({
+      statusCode: 409,
+    });
 
     const count = await prisma.reservation.count({
       where: {
@@ -56,7 +64,7 @@ it("reproduce double-booking without lock", async () => {
 
     console.log("Reservations saved for the same table: ", count);
 
-    expect(count).toBe(2);
+    expect(count).toBe(1);
   } finally {
     await prisma.reservation.deleteMany({
       where: {

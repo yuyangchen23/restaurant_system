@@ -1,5 +1,12 @@
 import { Request, Response } from "express";
-import { setReservationTimer, findFirstTable, setUpReservation } from "../services/reservationServices.js";
+import {
+  setReservationTimer,
+  findFirstTable,
+  setUpReservation,
+  getAllReservations,
+  updateReservationById,
+  removeReservation,
+} from "../services/reservationServices.js";
 import { AppError } from "../errors/AppError.js";
 
 export const createReservation = async (req: Request, res: Response) => {
@@ -33,10 +40,51 @@ export const createReservation = async (req: Request, res: Response) => {
   });
 };
 
-// export const getReservations = (req: Request, res: Response) => {
+export const getReservations = async (req: Request, res: Response) => {
+  const reservations = await getAllReservations();
 
-// };
+  return res.status(200).json({
+    success: true,
+    reservations,
+  });
+};
 
-// export const updateReservation = (req: Request, res: Response) => {};
+type UpdatedReservationInput = {
+  customerName?: string;
+  phone?: string;
+  partySize?: number;
+  startTime?: string;
+};
 
-// export const deleteReservation = (req: Request, res: Response) => {};
+export const updateReservation = async (req: Request, res: Response) => {
+  const reservationId = req.params.id;
+  const UpdatedReservationInput = req.body;
+
+  if (!reservationId || typeof reservationId !== "string") {
+    throw new AppError(400, "Please provide reservation ID");
+  }
+
+  const updatedReservation = await updateReservationById(
+    reservationId,
+    UpdatedReservationInput,
+  );
+
+  if (!updatedReservation) {
+    throw new AppError(501, "Server down.");
+  }
+
+  res.status(200).json({
+    success: true,
+    data: updatedReservation,
+  });
+};
+
+export const deleteReservation = async (req: Request, res: Response) => {
+  const reservationId = req.body.id;
+  const reservation = await removeReservation(reservationId);
+
+  res.status(200).json({
+    success: true,
+    reservation,
+  });
+};

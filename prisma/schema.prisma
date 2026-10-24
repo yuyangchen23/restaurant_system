@@ -50,7 +50,7 @@ model Table {
   id        String   @id @default(uuid())
   number    Int      @unique
   capacity  Int
-  isActive  Boolean  @default(false)
+  isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
 
   reservations Reservation[]
