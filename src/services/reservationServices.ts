@@ -1,5 +1,5 @@
 import { prisma } from "../lib/prisma.js";
-import { Prisma, Table } from "../generated/prisma/client.js";
+import { Prisma, ReservationStatus } from "../generated/prisma/client.js";
 import { AppError } from "../errors/AppError.js";
 import { PrismaClientKnownRequestError } from "@prisma/client/runtime/client";
 
@@ -212,4 +212,86 @@ export const removeReservation = async (reservationId: string) => {
 
     throw error;
   }
+};
+
+const allowedTransitions: Record<
+  ReservationStatus,
+  readonly ReservationStatus[]
+> = {
+  PENDING: ["CONFIRMED", "CANCELLED"],
+  CONFIRMED: ["SEATED", "CANCELLED", "NO_SHOW"],
+  SEATED: ["COMPLETED", "CANCELLED"],
+  COMPLETED: [],
+  CANCELLED: [],
+  NO_SHOW: [],
+} as const;
+
+export const updateStatus = async (
+  reservationId: string,
+  newStatus: ReservationStatus,
+) => {
+  const reservation = await prisma.reservation.findUnique({
+    where: {
+      id: reservationId,
+    },
+  });
+
+  if (!reservation) {
+    throw new AppError(404, "Reservation not found.");
+  }
+
+  const currentStatus = reservation.status;
+
+  if (!allowedTransitions[currentStatus].includes(newStatus)) {
+    throw new AppError(
+      409,
+      `Cannot change reservation status from ${currentStatus} to ${newStatus}`,
+    );
+  }
+
+  try {
+    return await prisma.reservation.update({
+      where: {
+        id: reservationId,
+        status: currentStatus,
+      },
+      data: {
+        status: newStatus,
+      },
+    });
+  } catch (error) {
+    if (
+      error instanceof PrismaClientKnownRequestError &&
+      error.code === "P2025"
+    ) {
+      throw new AppError(
+        409,
+        "The reservation changed or was removed, please refresh and try again.",
+      );
+    }
+    throw error;
+  }
+};
+
+export const checkInCustomer = async (reservationId: string) => {
+  return await updateStatus(reservationId, ReservationStatus.SEATED);
+};
+
+export const searchReservationByPhone = async (phone: string) => {
+  return await prisma.reservation.findMany({
+    where: {
+      phone,
+      status: "CONFIRMED",
+    },
+    include: {
+      table: {
+        select: {
+          number: true,
+        },
+      },
+    },
+    orderBy: {
+      startTime: "asc",
+    },
+  });
 };

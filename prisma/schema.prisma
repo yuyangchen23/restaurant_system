@@ -59,8 +59,10 @@ model Table {
 enum ReservationStatus {
   PENDING
   CONFIRMED
+  SEATED
   CANCELLED
   COMPLETED
+  NO_SHOW
 }
 
 model Reservation {

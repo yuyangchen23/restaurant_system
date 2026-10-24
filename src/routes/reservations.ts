@@ -8,5 +8,6 @@ router.post('/createReservation', authenticate, authorize("Staff", "Manager", "O
 router.get('/getReservations', authenticate, authorize("Staff", "Manager", "Owner"), getReservations);
 router.patch('/updateReservation/:id', authenticate, authorize("Staff", "Manager", "Owner"), updateReservation);
 router.delete('/deleteReservation/:id', authenticate, authorize("Staff", "Manager", "Owner"), deleteReservation);
+router.patch('/checkIn', authenticate, )
 
 export default router;
