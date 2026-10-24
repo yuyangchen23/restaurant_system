@@ -7,6 +7,6 @@ const router = express.Router();
 router.post('/createReservation', authenticate, authorize("Staff", "Manager", "Owner"), createReservation);
 router.get('/getReservations', authenticate, authorize("Staff", "Manager", "Owner"), getReservations);
 router.patch('/updateReservation/:id', authenticate, authorize("Staff", "Manager", "Owner"), updateReservation);
-router.delete('/deleteReservation/;id', authenticate, authorize("Staff", "Manager", "Owner"), deleteReservation);
+router.delete('/deleteReservation/:id', authenticate, authorize("Staff", "Manager", "Owner"), deleteReservation);
 
 export default router;

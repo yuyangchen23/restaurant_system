@@ -1,6 +1,7 @@
 import { prisma } from "../lib/prisma.js";
 import { Prisma, Table } from "../generated/prisma/client.js";
 import { AppError } from "../errors/AppError.js";
+import { PrismaClientKnownRequestError } from "@prisma/client/runtime/client";
 
 export const setReservationTimer = (originalDate: Date): Date => {
   const newDate = new Date(originalDate);
@@ -195,9 +196,20 @@ export const updateReservationById = async (
 };
 
 export const removeReservation = async (reservationId: string) => {
-  return await prisma.reservation.findUnique({
-    where: {
-      id: reservationId,
-    },
-  });
+  try {
+    return await prisma.reservation.delete({
+      where: {
+        id: reservationId,
+      },
+    });
+  } catch (error) {
+    if (
+      error instanceof PrismaClientKnownRequestError &&
+      error.code === "P2025"
+    ) {
+      throw new AppError(404, "Reservation not found.");
+    }
+
+    throw error;
+  }
 };

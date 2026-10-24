@@ -80,7 +80,12 @@ export const updateReservation = async (req: Request, res: Response) => {
 };
 
 export const deleteReservation = async (req: Request, res: Response) => {
-  const reservationId = req.body.id;
+  const reservationId = req.params.id;
+
+  if (!reservationId || typeof reservationId !== "string") {
+    throw new AppError(400, "Invalid reservation ID");
+  }
+  
   const reservation = await removeReservation(reservationId);
 
   res.status(200).json({
