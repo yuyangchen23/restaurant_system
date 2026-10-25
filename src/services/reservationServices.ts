@@ -63,22 +63,34 @@ export const setUpReservation = async (input: ReservationInput) => {
     throw new AppError(400, "Please select a time you'd like to reserve.");
   }
 
-  try {
-    return await prisma.reservation.create({
-      data: input,
-    });
-  } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      const adaptorError = error.meta?.driverAdapterError as
-        | AdaptorErrorDetails
-        | undefined;
+  const maxAttempts = 3;
 
-      if (adaptorError?.cause?.originalCode === "23P01") {
-        throw new AppError(409, "This table is already reserved at this time");
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return await prisma.reservation.create({
+        data: input,
+      });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        const adaptorError = error.meta?.driverAdapterError as
+          | AdaptorErrorDetails
+          | undefined;
+
+        if (adaptorError?.cause?.originalCode === "23P01") {
+          throw new AppError(
+            409,
+            "This table is already reserved at this time",
+          );
+        }
+
+        if (error.code === "P2034" && attempt < maxAttempts) {
+          await new Promise((resolve) => setTimeout(resolve, 25 * attempt));
+          continue;
+        }
       }
-    }
 
-    throw error;
+      throw error;
+    }
   }
 };
 
