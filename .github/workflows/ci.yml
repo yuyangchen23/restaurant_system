@@ -7,6 +7,24 @@ on:
 jobs:
   checks:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_password
+          POSTGRES_DB: restaurant_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U test_user -d restaurant_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgresql://test_user:test_password@localhost:5432/restaurant_test
+      DIRECT_URL: postgresql://test_user:test_password@localhost:5432/restaurant_test
 
     steps:
       - name: Checkout repository
@@ -26,6 +44,9 @@ jobs:
 
       - name: Typescript check
         run: npm run typecheck
+
+      - name: Apply database migration
+        run: npx prisma migrate deploy --config prisma7.config.ts
 
       - name: Test
         run: npm test

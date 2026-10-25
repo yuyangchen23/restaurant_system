@@ -1,6 +1,8 @@
 import express, { Request, Response } from "express";
 import authRouter from "./routes/auth.js";
 import staffRouter from "./routes/staff.js";
+import tableRouter from "./routes/tables.js"
+import reservationRouter from "./routes/reservations.js"
 import cookieParser from "cookie-parser";
 import { errorHandler } from "./middleware/errorHandler.js";
 
@@ -14,6 +16,12 @@ app.use("/auth", authRouter);
 
 // staff management
 app.use("/staff", staffRouter);
+
+// table management
+app.use("/table", tableRouter);
+
+// reservation management
+app.use("/reservations", reservationRouter);
 
 app.get("/", (req, res) => {
   res.json({ message: "Hello" });

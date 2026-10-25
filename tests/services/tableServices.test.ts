@@ -43,7 +43,7 @@ describe("Table test checkpoint", () => {
 
     vi.mocked(prisma.table.update).mockResolvedValue(fakeTable);
 
-    const result = await updateTable(fakeTable.id, true);
+    const result = await updateTable(fakeTable.number, true);
 
     expect(result).toMatchObject({
       isActive: fakeTable.isActive,
