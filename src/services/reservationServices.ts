@@ -35,6 +35,17 @@ export const findFirstTable = async (
   });
 };
 
+export const findReservationById = async (reservationId: string) => {
+  return await prisma.reservation.findUnique({
+    where: {
+      id: reservationId,
+    },
+    include: {
+      table: true,
+    },
+  });
+};
+
 type ReservationInput = {
   customerName: string;
   phone: string;
@@ -117,18 +128,7 @@ export const updateReservationById = async (
   reservationId: string,
   data: UpdatedReservationInput,
 ) => {
-  const reservation = await prisma.reservation.findUnique({
-    where: {
-      id: reservationId,
-    },
-    select: {
-      partySize: true,
-      startTime: true,
-      endTime: true,
-      status: true,
-      table: true,
-    },
-  });
+  const reservation = await findReservationById(reservationId);
 
   if (!reservation) {
     throw new AppError(404, "Reservation not found.");
@@ -242,11 +242,7 @@ export const updateStatus = async (
   reservationId: string,
   newStatus: ReservationStatus,
 ) => {
-  const reservation = await prisma.reservation.findUnique({
-    where: {
-      id: reservationId,
-    },
-  });
+  const reservation = await findReservationById(reservationId);
 
   if (!reservation) {
     throw new AppError(404, "Reservation not found.");
@@ -285,8 +281,47 @@ export const updateStatus = async (
   }
 };
 
+export const isTableOccupied = async (tableId: string) => {
+  const activeSession = await prisma.diningSession.findFirst({
+    where: {
+      tableId,
+      closeAt: null,
+    },
+    select: {
+      id: true,
+    },
+  });
+  return activeSession !== null;
+};
+
+export const createDiningSession = async (tableId: string, partySize: number) => {
+  return await prisma.diningSession.create({
+    data: {
+      tableId,
+      partySize,
+    },
+  });
+};
+
 export const checkInCustomer = async (reservationId: string) => {
-  return await updateStatus(reservationId, ReservationStatus.SEATED);
+  const reservation = await findReservationById(reservationId);
+
+  if (!reservation) {
+    throw new AppError(404, "Reservation not found.");
+  }
+
+  if (
+    !reservation.table.isActive ||
+    (await isTableOccupied(reservation.tableId))
+  ) {
+    throw new AppError(400, "This table is occupied.");
+  }
+
+  const diningSession = await createDiningSession(reservation.tableId, reservation.partySize);
+
+  await updateStatus(reservationId, ReservationStatus.SEATED);
+
+  return diningSession;
 };
 
 export const searchReservationByPhone = async (phone: string) => {

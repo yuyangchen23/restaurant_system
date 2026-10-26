@@ -54,6 +54,7 @@ model Table {
   createdAt DateTime @default(now())
 
   reservations Reservation[]
+  diningSession DiningSession[]
 }
 
 enum ReservationStatus {
@@ -80,5 +81,22 @@ model Reservation {
 
   table Table @relation(fields: [tableId], references: [id])
 
+  diningSession DiningSession?
+
   @@index([tableId, startTime])
+}
+
+model DiningSession {
+  id String @id @default(uuid())
+
+  tableId String
+  reservationId String? @unique
+
+  partySize Int
+
+  startAt DateTime @default(now())
+  closeAt DateTime?
+
+  table Table @relation(fields: [tableId], references: [id])
+  reservation Reservation? @relation(fields: [reservationId], references: [id])
 }
