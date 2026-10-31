@@ -116,3 +116,7 @@ export const checkIn = async (req: Request, res: Response) => {
     checkedInReservation,
   });
 };
+
+export const closeSession = async () => {
+  
+}

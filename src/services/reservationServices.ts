@@ -2,6 +2,7 @@ import { prisma } from "../lib/prisma.js";
 import { Prisma, ReservationStatus } from "../generated/prisma/client.js";
 import { AppError } from "../errors/AppError.js";
 import { PrismaClientKnownRequestError } from "@prisma/client/runtime/client";
+import { isTableOccupied, createSession } from "./diningSessionServices.js";
 
 export const setReservationTimer = (originalDate: Date): Date => {
   const newDate = new Date(originalDate);
@@ -31,6 +32,17 @@ export const findFirstTable = async (
     },
     orderBy: {
       capacity: "asc",
+    },
+  });
+};
+
+export const findReservationById = async (reservationId: string) => {
+  return await prisma.reservation.findUnique({
+    where: {
+      id: reservationId,
+    },
+    include: {
+      table: true,
     },
   });
 };
@@ -117,18 +129,7 @@ export const updateReservationById = async (
   reservationId: string,
   data: UpdatedReservationInput,
 ) => {
-  const reservation = await prisma.reservation.findUnique({
-    where: {
-      id: reservationId,
-    },
-    select: {
-      partySize: true,
-      startTime: true,
-      endTime: true,
-      status: true,
-      table: true,
-    },
-  });
+  const reservation = await findReservationById(reservationId);
 
   if (!reservation) {
     throw new AppError(404, "Reservation not found.");
@@ -226,7 +227,7 @@ export const removeReservation = async (reservationId: string) => {
   }
 };
 
-const allowedTransitions: Record<
+export const allowedTransitions: Record<
   ReservationStatus,
   readonly ReservationStatus[]
 > = {
@@ -242,11 +243,7 @@ export const updateStatus = async (
   reservationId: string,
   newStatus: ReservationStatus,
 ) => {
-  const reservation = await prisma.reservation.findUnique({
-    where: {
-      id: reservationId,
-    },
-  });
+  const reservation = await findReservationById(reservationId);
 
   if (!reservation) {
     throw new AppError(404, "Reservation not found.");
@@ -286,7 +283,37 @@ export const updateStatus = async (
 };
 
 export const checkInCustomer = async (reservationId: string) => {
-  return await updateStatus(reservationId, ReservationStatus.SEATED);
+  const reservation = await findReservationById(reservationId);
+
+  if (!reservation) {
+    throw new AppError(404, "Reservation not found.");
+  }
+
+  if (
+    !reservation.table.isActive ||
+    (await isTableOccupied(reservation.tableId))
+  ) {
+    throw new AppError(400, "This table is occupied.");
+  }
+
+  try {
+    return await prisma.$transaction(async (tx) => {
+      await createSession(
+        reservation.tableId,
+        reservation.partySize,
+        reservation.id,
+      );
+
+      await updateStatus(reservationId, ReservationStatus.SEATED);
+    });
+  } catch (error) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2002"
+    ) {
+      throw new AppError(409, "The session has already been created.");
+    }
+  }
 };
 
 export const searchReservationByPhone = async (phone: string) => {
