@@ -1,7 +1,8 @@
 import { AppError } from "../errors/AppError.js";
 import { Prisma, ReservationStatus } from "../generated/prisma/client.js";
 import { prisma } from "../lib/prisma.js";
-import { allowedTransitions } from "./reservationServices.js";
+import { allowedTransitions, findReservationById } from "./reservationServices.js";
+import { getTable } from "./tableServices.js";
 
 export const findCurrentSession = async (tableId: string) => {
   return await prisma.diningSession.findFirst({
@@ -32,11 +33,28 @@ export const isTableOccupied = async (tableId: string) => {
   return activeSession !== null;
 };
 
-export const createDiningSession = async (
+export const createSession = async (
   tableId: string,
   partySize: number,
-  reservationId: string,
+  reservationId?: string,
 ) => {
+  const table = await getTable(tableId);
+  if (!table || !table.isActive) {
+    throw new AppError(404, "Table not found.");
+  }
+
+  if (reservationId) {
+    const reservation = await findReservationById(reservationId);
+    
+    if (!reservation) {
+      throw new AppError(404, "Reservation not found.");
+    }
+
+    if (reservation.tableId !== tableId) {
+      throw new AppError(400, "The table is linked to another reservation.");
+    }
+  }
+
   try {
     return await prisma.diningSession.create({
       data: {
@@ -57,10 +75,11 @@ export const createDiningSession = async (
   } catch (error) {
     if (
       error instanceof Prisma.PrismaClientKnownRequestError &&
-      error.code === "2002"
+      error.code === "P2002"
     ) {
       throw new AppError(400, "The dining session has already created.");
     }
+    throw error;
   }
 };
 
@@ -68,9 +87,6 @@ export const closeSession = async (
   sessionId: string,
   outcome: ReservationStatus,
 ) => {
-  if (outcome !== "COMPLETED" && outcome !== "CANCELLED") {
-    throw new AppError(400, "Outcome muse be COMPLETED or CANCELLED.");
-  }
 
   try {
     return await prisma.$transaction(async (tx) => {
@@ -111,9 +127,10 @@ export const closeSession = async (
       }
 
       // update dining session: closeAt
-      await tx.diningSession.update({
+      return await tx.diningSession.update({
         where: {
           id: session.id,
+          closeAt: null,
         },
         data: {
           closeAt: new Date(),
