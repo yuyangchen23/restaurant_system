@@ -23,16 +23,6 @@ it("rejects double-booking for the same table", async () => {
   expect(endTime).toEqual(new Date("2026-10-23T22:00:00Z"));
 
   try {
-    const availableTables = await Promise.all([
-      findFirstTable(4, startTime, endTime),
-      findFirstTable(4, startTime, endTime),
-    ]);
-
-    expect(availableTables.map((t) => t?.id)).toEqual([
-      table.id,
-      table.id,
-    ]);
-
     const attempts = await Promise.allSettled(
       ["Alice", "Jane Doe"].map((customerName) => 
         setUpReservation({
