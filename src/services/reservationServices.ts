@@ -2,6 +2,7 @@ import { prisma } from "../lib/prisma.js";
 import { Prisma, ReservationStatus } from "../generated/prisma/client.js";
 import { AppError } from "../errors/AppError.js";
 import { PrismaClientKnownRequestError } from "@prisma/client/runtime/client";
+import { isTableOccupied, createSession } from "./diningSessionServices.js";
 
 export const setReservationTimer = (originalDate: Date): Date => {
   const newDate = new Date(originalDate);
@@ -226,7 +227,7 @@ export const removeReservation = async (reservationId: string) => {
   }
 };
 
-const allowedTransitions: Record<
+export const allowedTransitions: Record<
   ReservationStatus,
   readonly ReservationStatus[]
 > = {
@@ -281,19 +282,6 @@ export const updateStatus = async (
   }
 };
 
-export const isTableOccupied = async (tableId: string) => {
-  const activeSession = await prisma.diningSession.findFirst({
-    where: {
-      tableId,
-      closeAt: null,
-    },
-    select: {
-      id: true,
-    },
-  });
-  return activeSession !== null;
-};
-
 export const createDiningSession = async (tableId: string, partySize: number) => {
   return await prisma.diningSession.create({
     data: {
@@ -317,11 +305,24 @@ export const checkInCustomer = async (reservationId: string) => {
     throw new AppError(400, "This table is occupied.");
   }
 
-  const diningSession = await createDiningSession(reservation.tableId, reservation.partySize);
+  try {
+    return await prisma.$transaction(async (tx) => {
+      await createSession(
+        reservation.tableId,
+        reservation.partySize,
+        reservation.id,
+      );
 
-  await updateStatus(reservationId, ReservationStatus.SEATED);
-
-  return diningSession;
+      await updateStatus(reservationId, ReservationStatus.SEATED);
+    });
+  } catch (error) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2002"
+    ) {
+      throw new AppError(409, "The session has already been created.");
+    }
+  }
 };
 
 export const searchReservationByPhone = async (phone: string) => {
