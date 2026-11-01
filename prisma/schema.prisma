@@ -53,7 +53,7 @@ model Table {
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
 
-  reservations Reservation[]
+  reservations  Reservation[]
   diningSession DiningSession[]
 }
 
@@ -89,14 +89,27 @@ model Reservation {
 model DiningSession {
   id String @id @default(uuid())
 
-  tableId String
+  tableId       String
   reservationId String? @unique
 
   partySize Int
 
-  startAt DateTime @default(now())
+  startAt DateTime  @default(now())
   closeAt DateTime?
 
-  table Table @relation(fields: [tableId], references: [id])
+  table       Table        @relation(fields: [tableId], references: [id])
   reservation Reservation? @relation(fields: [reservationId], references: [id])
+}
+
+model MenuItem {
+  id String @id @default(uuid())
+
+  name        String
+  description String?
+  price       Decimal
+
+  isAvailable Boolean
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
 }
