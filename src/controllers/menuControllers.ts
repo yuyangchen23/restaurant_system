@@ -1,21 +1,105 @@
-import { Request, Response } from "express"
+import { Request, Response } from "express";
+import {
+  getAllItems,
+  addItem,
+  getItem,
+  updateItem,
+  updateItemAvailById,
+} from "../services/menuServices.js";
+import { AppError } from "../errors/AppError.js";
 
-export const getMenus = (req: Request, res: Response) => {
-  
-}
+export const getMenus = async (req: Request, res: Response) => {
+  const data = await getAllItems();
+  res.status(200).json({
+    success: true,
+    data,
+  });
+};
 
-export const addItemToMenu = (req: Request, res: Response) => {
+export const addItemToMenu = async (req: Request, res: Response) => {
+  const { name, description, price, isAvailable } = req.body;
 
-}
+  if (!name || !name?.trim() || !price || typeof price !== "number") {
+    throw new AppError(400, "Please provide proper item name and price.");
+  }
 
-export const getItemById = (req: Request, res: Response) => {
+  if (isAvailable !== undefined && typeof isAvailable !== "boolean") {
+    throw new AppError(400, "Availability must be a boolean.");
+  }
 
-}
+  const item = await addItem(name, description, price, isAvailable);
 
-export const updateItem = (req: Request, res: Response) => {
+  res.json({
+    success: true,
+    data: item,
+  });
+};
 
-}
+export const getItemById = async (req: Request, res: Response) => {
+  const id = req.params.id;
+
+  if (!id || typeof id !== "string") {
+    throw new AppError(400, "Please provide a valid item id.");
+  }
+
+  const item = await getItem(id);
+
+  if (!item) {
+    throw new AppError(409, "The item does not exist");
+  }
+
+  res.status(200).json({
+    success: true,
+    data: item,
+  });
+};
+
+export const updateItemById = async (req: Request, res: Response) => {
+  const id = req.params.id;
+  const { name, description, price } = req.body;
+
+  if (!id || typeof id !== "string") {
+    throw new AppError(400, "Please provide a valid ID.");
+  }
+
+  if (name !== undefined && typeof name !== "string") {
+    throw new AppError(400, "Please provide a valid name.");
+  }
+
+  if (description !== undefined && typeof description !== "string") {
+    throw new AppError(400, "Please provide a valid description.");
+  }
+
+  if (price !== undefined && typeof price !== "number") {
+    throw new AppError(400, "Please provide a valid price.");
+  }
+
+  const item = await updateItem(id, name, description, price);
+
+  return res.status(200).json({
+    success: true,
+    data: {
+      item,
+    },
+  });
+};
 
 export const updateItemAvail = (req: Request, res: Response) => {
+  const id = req.params.id;
+  const { isAvailable } = req.body;
 
-}
+  if (!id || typeof id !== "string") {
+    throw new AppError(400, "Please enter a valid id.");
+  }
+
+  if (!isAvailable || typeof isAvailable !== "boolean") {
+    throw new AppError(400, "Please enter a valid available type.");
+  }
+
+  const item = updateItemAvailById(id, isAvailable);
+
+  res.status(200).json({
+    success: true,
+    data: item,
+  });
+};
