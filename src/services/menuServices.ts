@@ -27,6 +27,12 @@ export const addItem = async (
         price,
         isAvailable,
       },
+      select: {
+        name: true,
+        description: true,
+        price: true,
+        isAvailable: true,
+      },
     });
   } catch (error) {
     if (
@@ -72,6 +78,12 @@ export const updateItem = async (
       id,
     },
     data,
+    select: {
+      name: true,
+      description: true,
+      price: true,
+      isAvailable: true,
+    },
   });
 };
 
@@ -82,6 +94,20 @@ export const updateItemAvailById = async (id: string, isAvailable: boolean) => {
     },
     data: {
       isAvailable,
+    },
+    select: {
+      name: true,
+      description: true,
+      price: true,
+      isAvailable: true,
+    },
+  });
+};
+
+export const deleteItem = async (id: string) => {
+  return await prisma.menuItem.delete({
+    where: {
+      id,
     },
   });
 };

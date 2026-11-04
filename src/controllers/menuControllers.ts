@@ -5,6 +5,7 @@ import {
   getItem,
   updateItem,
   updateItemAvailById,
+  deleteItem,
 } from "../services/menuServices.js";
 import { AppError } from "../errors/AppError.js";
 
@@ -84,7 +85,7 @@ export const updateItemById = async (req: Request, res: Response) => {
   });
 };
 
-export const updateItemAvail = (req: Request, res: Response) => {
+export const updateItemAvail = async (req: Request, res: Response) => {
   const id = req.params.id;
   const { isAvailable } = req.body;
 
@@ -92,14 +93,37 @@ export const updateItemAvail = (req: Request, res: Response) => {
     throw new AppError(400, "Please enter a valid id.");
   }
 
-  if (!isAvailable || typeof isAvailable !== "boolean") {
+  if (typeof isAvailable !== "boolean") {
     throw new AppError(400, "Please enter a valid available type.");
   }
 
-  const item = updateItemAvailById(id, isAvailable);
+  const item = await updateItemAvailById(id, isAvailable);
+
+  if (!item) {
+    throw new AppError(404, "Item not found.");
+  }
 
   res.status(200).json({
     success: true,
     data: item,
+  });
+};
+
+export const deleteItemById = async (req: Request, res: Response) => {
+  const id = req.params.id;
+
+  if (!id || typeof id !== "string") {
+    throw new AppError(400, "Please provide a valid id.");
+  }
+
+  const deletedItem = await deleteItem(id);
+
+  if (!deletedItem) {
+    throw new AppError(404, "Item not found.");
+  }
+
+  res.status(200).json({
+    success: true,
+    deletedItem,
   });
 };
