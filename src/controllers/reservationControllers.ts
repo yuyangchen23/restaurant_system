@@ -36,7 +36,7 @@ export const createReservation = async (req: Request, res: Response) => {
     tableId: table.id,
   });
 
-  res.status(200).json({
+  return res.status(200).json({
     success: true,
     data: reservation,
   });

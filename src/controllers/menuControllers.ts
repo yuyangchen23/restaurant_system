@@ -30,7 +30,7 @@ export const addItemToMenu = async (req: Request, res: Response) => {
 
   const item = await addItem(name, description, price, isAvailable);
 
-  res.json({
+  return res.json({
     success: true,
     data: item,
   });
@@ -49,7 +49,7 @@ export const getItemById = async (req: Request, res: Response) => {
     throw new AppError(409, "The item does not exist");
   }
 
-  res.status(200).json({
+  return res.status(200).json({
     success: true,
     data: item,
   });
@@ -103,7 +103,7 @@ export const updateItemAvail = async (req: Request, res: Response) => {
     throw new AppError(404, "Item not found.");
   }
 
-  res.status(200).json({
+  return res.status(200).json({
     success: true,
     data: item,
   });
@@ -122,7 +122,7 @@ export const deleteItemById = async (req: Request, res: Response) => {
     throw new AppError(404, "Item not found.");
   }
 
-  res.status(200).json({
+  return res.status(200).json({
     success: true,
     deletedItem,
   });
