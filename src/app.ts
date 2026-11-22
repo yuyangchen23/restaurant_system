@@ -5,6 +5,7 @@ import tableRouter from "./routes/tables.js";
 import reservationRouter from "./routes/reservations.js";
 import diningSessionRouter from "./routes/diningSession.js";
 import menuRouter from "./routes/menu.js";
+import orderRouter from "./routes/order.js";
 import cookieParser from "cookie-parser";
 import { errorHandler } from "./middleware/errorHandler.js";
 
@@ -30,6 +31,9 @@ app.use("/diningsession", diningSessionRouter);
 
 // menu management
 app.use("/menu", menuRouter);
+
+//order management
+app.use("/orders", orderRouter);
 
 app.get("/", (req, res) => {
   res.json({ message: "Hello" });

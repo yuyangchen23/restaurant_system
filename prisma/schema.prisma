@@ -121,7 +121,7 @@ model MenuItem {
 enum OrderStatus {
   PENDING
   PLACED
-  PAID
+  CANCELLED
 }
 
 model OrderItem {
